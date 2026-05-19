@@ -24,6 +24,8 @@ public:
     void setIPAddress(string ip);
     void setSecurityLevel(int security);
     void setDataValue(int data);
+    void print() const;
+    void describe() const;
 };
 
 #endif // SERVER_H
