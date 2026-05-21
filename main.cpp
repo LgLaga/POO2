@@ -49,14 +49,30 @@ int main() {
         } else if (command == "catalog") {
             engine.printCatalog();
         } else if (command == "servers") {
-            engine.printServersCatalog();
+            engine.serverscan();
         } else if (command.rfind("info server ", 0) == 0) {
             string serverName = command.substr(12);
             engine.showServerInfo(serverName);
         } else if (command.rfind("info software ", 0) == 0) {
             string softwareName = command.substr(14);
             engine.showSoftwareInfo(softwareName);
-        } else if (command == "clear") {
+        
+        } else if (command.rfind("hack ", 0) == 0) {
+            stringstream ss(command);
+            string cmd, attackName, serverIP;
+            ss >> cmd >> attackName >> serverIP;
+            if (attackName.empty() || serverIP.empty()) {
+                engine.saveCursor();
+                engine.gotoxy(4, engine.getTerminalLine());
+                cout << "Format gresit! Foloseste: hack {nume_atac} {server_ip}           ";
+                engine.setTerminalLine(engine.getTerminalLine() + 1);
+                engine.restoreCursor();
+    } else {
+        // Apelăm funcția din engine care procesează atacul
+        engine.executeHack(attackName, serverIP);
+    }
+}
+        else if (command == "clear") {
             engine.clearTerminal();
             engine.setTerminalLine(23);
             engine.renderStats();

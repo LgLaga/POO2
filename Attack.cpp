@@ -53,3 +53,9 @@ void Attack::setIsActive(bool active) {
 void Attack::setIsAutomated(bool automated) {
     isAutomated = automated;
 }
+void Attack::setTargetServerIP(const string& ip) {
+    TargetServerIP = ip;
+}
+string Attack::getTargetServerIP() {
+    return TargetServerIP;
+}   

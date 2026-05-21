@@ -37,6 +37,8 @@ public:
     virtual void setBonusProcessingPower(int power) {}
     virtual void setBonusRAM(int ram) {}
     virtual void setPassiveMoney(int money) {}
+    virtual void setTargetServerIP(const string& ip) { return; }
+    virtual string getTargetServerIP() { return ""; }
     int getCost() const;
     int getRAMUsage() const;
     int getCPUUsage() const;

@@ -60,6 +60,8 @@ public:
     void clearTerminal();
     void showServerInfo(const string& serverName);
     void showSoftwareInfo(const string& softwareName);
+    void executeHack(const string& softwareName, const string& serverIP);
+    void serverscan();
     string generateProgressBar(int remaining, int total, int length);
 };
 

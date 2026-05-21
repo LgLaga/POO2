@@ -406,11 +406,27 @@ void Engine::update(int seconds)
                 
                 if (remaining <= 0)
                 {
-                    saveCursor();
                     software->setIsActive(false);
                     software->setTimeRemaining(0);
                     this->Income -= software->getPassiveMoney();
-                    restoreCursor();
+
+    // 🟢 Extragem IP-ul serverului țintă direct într-o singură linie!
+                    string targetIP = software->getTargetServerIP(); 
+
+                    if (!targetIP.empty()) 
+                    {
+        // Căutăm serverul în listă pentru a-i lua banii
+                        for (const auto& pair : ServersCatalog) 
+                        {
+                            if (pair.second->getIPAddress() == targetIP) 
+                            {
+                            this->Money += pair.second->getDataValue(); // Recompensa financiară
+                            this->Experience += 25;                    // Recompensa XP
+                            break;
+                            }
+                        }
+                    }
+
                     it = activeSoftware.erase(it);
                     stateChanged = true; 
                     continue;
@@ -530,20 +546,18 @@ int Engine::availableProcessingPower() const
     return ProcessingPower - usedProcessingPower;
 }
 void Engine::saveCursor() {
-    cout << "\0337" << flush; // Save cursor position
+    cout << "\0337" << flush;
 }
 void Engine::restoreCursor() {
-    cout << "\0338" << flush; // Restore cursor position
+    cout << "\0338" << flush; 
 }
 string Engine::generateProgressBar(int remaining, int duration, int width)
 {
     if (duration <= 0) return string(width, '#');
 
-    // Calculăm progresul efectiv (cât s-a scurs din timp)
     int elapsed = duration - remaining;
     float progress = static_cast<float>(elapsed) / duration;
-    
-    // Siguranță pentru margini
+
     if (progress < 0.0f) progress = 0.0f;
     if (progress > 1.0f) progress = 1.0f;
 
@@ -554,7 +568,6 @@ string Engine::generateProgressBar(int remaining, int duration, int width)
 }
 
 void Engine::showServerInfo(const string& serverName) {
-    // Căutăm serverul în catalogul de servere
     auto it = ServersCatalog.find(serverName);
     if (it == ServersCatalog.end()) {
         saveCursor();
@@ -566,12 +579,11 @@ void Engine::showServerInfo(const string& serverName) {
     }
 
     auto server = it->second;
-    saveCursor(); // 🟢 Înghețăm poziția promptului în care scrie jucătorul
+    saveCursor(); // 
 
     int currentY = getTerminalLine();
-    string emptyLine = "                                           "; // 43 de spații pentru a șterge textul vechi din casetă
-
-    // Scriem proprietățile serverului linie cu linie, controlând axa Y manual
+    string emptyLine = "                                           ";
+   
     gotoxy(4, currentY); cout << emptyLine;
     gotoxy(4, currentY++); cout << "Server Connections Info:";
 
@@ -587,10 +599,10 @@ void Engine::showServerInfo(const string& serverName) {
     gotoxy(4, currentY); cout << emptyLine;
     gotoxy(4, currentY++); cout << "Data Value    : $" << server->getDataValue();
 
-    // Actualizăm variabila terminalului pentru ca următorul prompt "> " să apară exact sub info
+    
     setTerminalLine(currentY);
 
-    restoreCursor(); // 🟢 Cursorul sare înapoi la promptul utilizatorului, complet fluid
+    restoreCursor(); 
 }
 
 void Engine::showSoftwareInfo(const string& softwareName) {
@@ -607,7 +619,7 @@ void Engine::showSoftwareInfo(const string& softwareName) {
     auto software = it->second;
     saveCursor();
 
-    // Resetăm zona de scriere în interiorul Terminalului dacă textul este prea jos
+    
     int currentY = getTerminalLine();
     string emptyLine = "                                           "; // Golește rândul din interiorul box-ului
 
@@ -629,7 +641,7 @@ void Engine::showSoftwareInfo(const string& softwareName) {
     gotoxy(4, currentY); cout << emptyLine;
     gotoxy(4, currentY++); cout << "Description: " << software->getDescription().substr(0, 30);
 
-    // Dacă este de tip Attack, putem face un cast dinamic sau citi proprietățile specifice direct prin metodele virtuale:
+   
     if (software->getDuration() > 0) {
         gotoxy(4, currentY); cout << emptyLine;
         gotoxy(4, currentY++); cout << "Attack Power: " << software->getAttackPower();
@@ -653,8 +665,155 @@ void Engine::showSoftwareInfo(const string& softwareName) {
         gotoxy(4, currentY++); cout << "Bonus Processing Power: " << software->getBonusProcessingPower() << " units";
     }
 
-    // Actualizăm linia terminalului global pentru următoarea comandă a utilizatorului
+   
     setTerminalLine(currentY);
 
     restoreCursor();
+}
+void Engine::executeHack(const string& attackName, const string& serverIP)
+{
+    
+    shared_ptr<Server> targetServer = nullptr;
+    for (const auto& pair : ServersCatalog) {
+        if (pair.second->getIPAddress() == serverIP) {
+            targetServer = pair.second;
+            break;
+        }
+    }
+
+    if (targetServer == nullptr) {
+        saveCursor();
+        gotoxy(4, getTerminalLine());
+        cout << "Eroare: IP Server inexistent! (" << serverIP << ")                   ";
+        setTerminalLine(getTerminalLine() + 1);
+        restoreCursor();
+        return;
+    }
+
+    
+    shared_ptr<Software> attackSoftware = nullptr;
+    for (const auto& software : installedSoftware) {
+        if (software->getName() == attackName) {
+            attackSoftware = software;
+            break;
+        }
+    }
+
+    if (attackSoftware == nullptr) {
+        saveCursor();
+        gotoxy(4, getTerminalLine());
+        cout << "Eroare: Nu ai instalat '" << attackName << "'!                     ";
+        setTerminalLine(getTerminalLine() + 1);
+        restoreCursor();
+        return;
+    }
+
+    
+    auto it = std::find(activeSoftware.begin(), activeSoftware.end(), attackSoftware);
+    if (it != activeSoftware.end()) {
+        saveCursor();
+        gotoxy(4, getTerminalLine());
+        cout << "Atacul '" << attackName << "' ruleaza deja. ";
+        setTerminalLine(getTerminalLine() + 1);
+        restoreCursor();
+        return;
+    }
+
+    
+    if (attackSoftware->getRAMUsage() > this->availableRAM() || attackSoftware->getCPUUsage() > this->availableProcessingPower()) {
+        saveCursor();
+        gotoxy(4, getTerminalLine());
+        cout << "Resurse insuficiente!";
+        setTerminalLine(getTerminalLine() + 1);
+        restoreCursor();
+        return;
+    }
+
+    if(attackSoftware->getDuration() <= 0) {
+        saveCursor();
+        gotoxy(4, getTerminalLine());
+        cout << "Software-ul '" << attackName << "' nu este executabil!";
+        setTerminalLine(getTerminalLine() + 1);
+        restoreCursor();
+        return;
+    }
+
+    if(attackSoftware->getTargetServerIP() != "") {
+        saveCursor();
+        gotoxy(4, getTerminalLine());
+        cout << attackName << "' este deja directionat catre un server!";
+        setTerminalLine(getTerminalLine() + 1);
+        restoreCursor();
+        return;
+    }
+
+    if(attackSoftware->getAttackPower() < targetServer->getSecurityLevel()) {
+        saveCursor();
+        gotoxy(4, getTerminalLine());
+        cout << attackName << "' nu este suficient de puternic!";
+        setTerminalLine(getTerminalLine() + 1);
+        restoreCursor();
+        return;
+    }
+
+    
+    attackSoftware->setTimeRemaining(attackSoftware->getDuration());
+    attackSoftware->setIsActive(true);
+    
+    activeSoftware.push_back(attackSoftware);
+
+    
+    saveCursor();
+    gotoxy(4, getTerminalLine());
+    cout << "Lansat " << attackName << " impotriva " << targetServer->getName() << "...";
+    setTerminalLine(getTerminalLine() + 1);
+
+    
+    attackSoftware->setTargetServerIP(targetServer->getIPAddress());
+
+    renderTaskManager();
+    renderStats();
+    restoreCursor();
+}
+
+void Engine::serverscan()
+{
+    saveCursor(); // 1. Înghețăm promptul curent al jucătorului
+
+    // Resetăm zona de scriere la începutul ferestrei Terminalului (liniile 23-38)
+    int currentY = getTerminalLine(); // Preluăm linia curentă a terminalului pentru a ști de unde să începem să scriem
+    string emptyLine = "                                           "; // Spații pentru ștergerea textului vechi
+
+    // Desenăm antetul listei
+    gotoxy(4, currentY); cout << emptyLine;
+    gotoxy(4, currentY++); cout << "====== NETWORK SERVERS LIST ======";
+
+    // 2. Parcurgem serverele din map-ul clasei
+    for (const auto &pair : this->ServersCatalog)
+    {
+        if (currentY < 39) // Siguranță: Nu lăsăm textul să spargă marginile de jos ale box-ului
+        {
+            auto server = pair.second;
+
+            gotoxy(4, currentY); cout << emptyLine; // Curățăm rândul curent
+            gotoxy(4, currentY++); 
+            
+            // Afișăm Hostname-ul, IP-ul și nivelul de Securitate pe același rând
+            cout << "- " << server->getName() 
+                 << " [" << server->getIPAddress() << "]"
+                 << " SEC: " << server->getSecurityLevel() << "/10";
+        }
+    }
+
+    // 3. Curățăm restul liniilor rămase goale până la fundul casetei
+    while (currentY < 39)
+    {
+        gotoxy(4, currentY++);
+        cout << emptyLine;
+    }
+
+    // Actualizăm variabila internă a terminalului pentru ca următorul prompt "> " să știe unde să apară
+    setTerminalLine(currentY); 
+
+    restoreCursor(); // 3. Salt înapoi la promptul utilizatorului
 }
