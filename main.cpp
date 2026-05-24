@@ -11,7 +11,7 @@ using namespace std;
 
 int main() {
     int a, b, terminalline = 23;
-    Engine engine;
+    Engine& engine = Engine::getInstance();
     engine.start();
     thread updateThread(&Engine::update, &engine, 1); 
     updateThread.detach(); 
@@ -56,19 +56,23 @@ int main() {
         } else if (command.rfind("info software ", 0) == 0) {
             string softwareName = command.substr(14);
             engine.showSoftwareInfo(softwareName);
-        
-        } else if (command.rfind("hack ", 0) == 0) {
+        } else if(command =="render") {
+            engine.render();
+            engine.clearTerminal();
+            engine.setTerminalLine(23);
+            engine.renderStats();
+            engine.renderSoftwareList();
+        }else if (command.rfind("hack ", 0) == 0) {
             stringstream ss(command);
             string cmd, attackName, serverIP;
             ss >> cmd >> attackName >> serverIP;
             if (attackName.empty() || serverIP.empty()) {
                 engine.saveCursor();
                 engine.gotoxy(4, engine.getTerminalLine());
-                cout << "Format gresit! Foloseste: hack {nume_atac} {server_ip}           ";
+                cout << "! Foloseste: hack {nume_atac} {server_ip}           ";
                 engine.setTerminalLine(engine.getTerminalLine() + 1);
                 engine.restoreCursor();
     } else {
-        // Apelăm funcția din engine care procesează atacul
         engine.executeHack(attackName, serverIP);
     }
 }

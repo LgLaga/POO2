@@ -57,7 +57,7 @@ void Engine::clearTerminal()
     for (int i = 22; i < 39; ++i)
     {
         gotoxy(4, i);
-        cout << "                                      ";
+        cout << "                                            ";
     }
     gotoxy(4, 22);
     cout << "Terminal Output:";
@@ -81,7 +81,7 @@ void Engine::renderSoftwareCatalog()
 }
 void Engine::renderSoftwareList()
 {
-    int line = 3; // Start from the bottom of the Terminal box
+    int line = 3; 
     for (const auto &software : this->installedSoftware)
     {
         if (true)
@@ -92,19 +92,24 @@ void Engine::renderSoftwareList()
     }
 }
 
+
+
 void Engine::buySoftware(const string &softwareName)
 {
-    auto it = Catalog.find(softwareName);
-    if (it != Catalog.end())
+    
+    auto software = findInCatalog(this->Catalog, softwareName);
+
+   
+    if (software != nullptr)
     {
-        auto software = it->second;
         if (Money >= software->getCost())
         {
             Money -= software->getCost();
             installedSoftware.push_back(software);
+            
             saveCursor();
             gotoxy(4, 22);
-            cout << "Bought " << softwareName << " for $" << software->getCost() << endl;
+            cout << "Bought " << softwareName << " for $" << software->getCost() << "      ";
             renderStats(); 
             renderSoftwareList(); 
             restoreCursor();
@@ -113,7 +118,7 @@ void Engine::buySoftware(const string &softwareName)
         {
             saveCursor();
             gotoxy(4, 22);
-            cout << "Not enough money to buy " << softwareName << endl;
+            cout << "Not enough money to buy " << softwareName << ".       "; 
             restoreCursor();
         }
     }
@@ -121,11 +126,10 @@ void Engine::buySoftware(const string &softwareName)
     {
         saveCursor();
         gotoxy(4, 22);
-        cout << "Software " << softwareName << " not found in catalog." << endl;
+        cout << "Software " << softwareName << " not found in catalog.       "; 
         restoreCursor();
     }
 }
-
 #include <algorithm> 
 
 void Engine::useSoftware(const string &softwareName)
@@ -156,6 +160,8 @@ void Engine::useSoftware(const string &softwareName)
             
             activeSoftware.push_back(software);
             this->Income += software->getPassiveMoney(); 
+            this->ProcessingPower += software->getBonusProcessingPower();
+            this->RAM += software->getBonusRAM();
             debugOut << "Income updated: $" << this->Income << endl;
             debugOut << activeSoftware.size() << " active software(s)." << endl;
             saveCursor();
@@ -179,13 +185,18 @@ void Engine::unuseSoftware(const string &softwareName)
     {
         if (software->getName() == softwareName)
         {
+            this->ProcessingPower -= software->getBonusProcessingPower();
+            this->RAM -= software->getBonusRAM();
+            this->Income -= software->getPassiveMoney();
             software->setIsActive(false); 
             activeSoftware.erase(remove(activeSoftware.begin(), activeSoftware.end(), software), activeSoftware.end());
+            gotoxy(4,22);
             cout << "Stopped using " << softwareName << endl;
             restoreCursor();
             return;
         }
     }
+    gotoxy(4,22);
     cout << "Software " << softwareName << " not currently active." << endl;
     restoreCursor();
 }
@@ -290,40 +301,37 @@ void Engine::render()
 
 void Engine::renderTaskManager()
 {
-    string emptyLine = "                                             "; // 45 de spații utile
-
-    // 1. Status RAM & CPU (Rămân neschimbate)
+    string emptyLine = "                                             "; 
     gotoxy(82, 22); cout << emptyLine;
-    gotoxy(82, 22); cout << "RAM: " << this->availableRAM() << " / " << this->RAM << " GB";
+    gotoxy(82, 22); cout << "RAM: " << this->RAM - this->availableRAM() << " / " << this->RAM << " GB";
 
     gotoxy(82, 23); cout << emptyLine;
     gotoxy(82, 23); cout << "Processes: " << (this->ProcessingPower - this->availableProcessingPower()) << " / " << this->ProcessingPower;
 
-    // 2. Afișarea listei cu Bare de Încărcare
     int line = 24;
     for (const auto &software : this->activeSoftware)
     {
         if (line < 39)
         {
             gotoxy(82, line);
-            cout << emptyLine; // Curățăm complet linia veche
+            cout << emptyLine; 
             
             gotoxy(82, line);
             cout << "* " << software->getName();
 
-            // Dacă software-ul are durată (este un atac/program cu timer)
+            
             if (software->getDuration() > 0)
             {
-                // Generăm o bară de încărcare lungă de 10 caractere
+                
                 string bar = generateProgressBar(software->getTimeRemaining(), software->getDuration(), 10);
                 
-                // O poziționăm decalat pe aceeași linie (lăsăm spațiu după nume)
+                
                 gotoxy(100, line);
                 cout << bar << " " << software->getTimeRemaining() << "s";
             }
             else
             {
-                // Pentru programe pasive permanente (fără timer), scriem doar statusul stabil
+               
                 gotoxy(100, line);
                 cout << "[PERMANENT]";
             }
@@ -331,7 +339,7 @@ void Engine::renderTaskManager()
         }
     }
 
-    // 3. Curățarea liniilor rămase libere jos
+    
     while (line < 39)
     {
         gotoxy(82, line++);
@@ -409,19 +417,16 @@ void Engine::update(int seconds)
                     software->setIsActive(false);
                     software->setTimeRemaining(0);
                     this->Income -= software->getPassiveMoney();
-
-    // 🟢 Extragem IP-ul serverului țintă direct într-o singură linie!
                     string targetIP = software->getTargetServerIP(); 
 
                     if (!targetIP.empty()) 
                     {
-        // Căutăm serverul în listă pentru a-i lua banii
                         for (const auto& pair : ServersCatalog) 
                         {
                             if (pair.second->getIPAddress() == targetIP) 
                             {
-                            this->Money += pair.second->getDataValue(); // Recompensa financiară
-                            this->Experience += 25;                    // Recompensa XP
+                            this->Money += pair.second->getDataValue(); 
+                            this->Experience += 25;                   
                             break;
                             }
                         }
@@ -434,9 +439,9 @@ void Engine::update(int seconds)
             }
             ++it;
         }
-        if (this->Income > 0 && this->currentTime % 10 == 0) { //every 10 seconds, for example, you could check if currentTime % 10 == 0
+        if (this->Income > 0 && this->currentTime % 10 == 0) { 
             this->Money += this->Income * 10;
-            stateChanged = true; // Mark true so the Stats box reflects the new cash balance
+            stateChanged = true; 
         }
         if (stateChanged)
         {
@@ -455,14 +460,14 @@ void Engine::update(int seconds)
 
         if (stateChanged || areTimersActive || this->Income > 0)
         {
-            saveCursor(); // 🟢 Protejăm inputul prompt al utilizatorului cu scutul ANSI
+            saveCursor(); 
             
-            renderTaskManager(); // Va redesena barele actualizate: [#####.....] 4s -> [####......] 3s
+            renderTaskManager();
             if (stateChanged || this->currentTime % 10 == 0) {
-                renderStats(); // Update la bani doar când e necesar ca să evităm flicker-ul inutil
+                renderStats(); 
             }
             
-            restoreCursor(); // 🟢 Întoarcem cursorul exact unde scria jucătorul în Terminal
+            restoreCursor(); 
         }
     }
 }
@@ -621,7 +626,7 @@ void Engine::showSoftwareInfo(const string& softwareName) {
 
     
     int currentY = getTerminalLine();
-    string emptyLine = "                                           "; // Golește rândul din interiorul box-ului
+    string emptyLine = "                                           "; 
 
     gotoxy(4, currentY); cout << emptyLine;
     gotoxy(4, currentY++); cout << "Software Info:";
@@ -775,45 +780,45 @@ void Engine::executeHack(const string& attackName, const string& serverIP)
     renderStats();
     restoreCursor();
 }
+Engine::Engine() {
+    Money = 1000; 
+    Experience = 0;
+    RAM = 16;
+    ProcessingPower = 8;
+    Income = 0;
+    isRunning = true;
+    currentTime = 0;
+    terminalLine = 23;
+}
 
 void Engine::serverscan()
 {
-    saveCursor(); // 1. Înghețăm promptul curent al jucătorului
+    saveCursor(); 
 
-    // Resetăm zona de scriere la începutul ferestrei Terminalului (liniile 23-38)
-    int currentY = getTerminalLine(); // Preluăm linia curentă a terminalului pentru a ști de unde să începem să scriem
-    string emptyLine = "                                           "; // Spații pentru ștergerea textului vechi
+    
+    int currentY = getTerminalLine(); 
+    string emptyLine = "                                           "; 
 
-    // Desenăm antetul listei
+    
     gotoxy(4, currentY); cout << emptyLine;
     gotoxy(4, currentY++); cout << "====== NETWORK SERVERS LIST ======";
 
-    // 2. Parcurgem serverele din map-ul clasei
     for (const auto &pair : this->ServersCatalog)
     {
-        if (currentY < 39) // Siguranță: Nu lăsăm textul să spargă marginile de jos ale box-ului
+        if (currentY < 39) 
         {
             auto server = pair.second;
 
-            gotoxy(4, currentY); cout << emptyLine; // Curățăm rândul curent
+            gotoxy(4, currentY); cout << emptyLine; 
             gotoxy(4, currentY++); 
             
-            // Afișăm Hostname-ul, IP-ul și nivelul de Securitate pe același rând
             cout << "- " << server->getName() 
                  << " [" << server->getIPAddress() << "]"
-                 << " SEC: " << server->getSecurityLevel() << "/10";
+                 << " SEC: " << server->getSecurityLevel();
         }
     }
-
-    // 3. Curățăm restul liniilor rămase goale până la fundul casetei
-    while (currentY < 39)
-    {
-        gotoxy(4, currentY++);
-        cout << emptyLine;
-    }
-
-    // Actualizăm variabila internă a terminalului pentru ca următorul prompt "> " să știe unde să apară
+    
     setTerminalLine(currentY); 
 
-    restoreCursor(); // 3. Salt înapoi la promptul utilizatorului
+    restoreCursor(); 
 }

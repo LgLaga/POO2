@@ -1,4 +1,20 @@
-Attack Worm 1 3 1 |un vierme de calculator| 20 10 10 10 0 0
-Attack Worm2 1 2 1 |un 2vierme de calculator| 9 10 10 10 0 0
-Passive BitMiner 1 2 5 |un miner| 0 0 10
-Server facebook.com 8.8.8.8 11 1000
+Attack RansomwareX 4 4 150 |Cripteaza datele si cere recompensa| 5 3 15 15 0 0
+Attack TrojanHorse 2 2 80 |Se ascunde in sistem ca utilitar| 3 8 25 25 0 0
+Attack SQLInjector 3 5 200 |Exploateaza baze de date vulnerabile| 7 2 8 8 0 0
+Attack DDOS_Botnet 6 8 500 |Atac masiv de suprasolicitare| 9 1 30 30 0 0
+Attack SpywarePro 2 1 110 |Infiltreaza sistemul si fura date| 2 9 20 20 0 0
+Attack ZeroDayExploit 5 6 450 |Exploateaza o vulnerabilitate critica| 10 4 12 12 0 0
+
+Passive CloudMiner 3 3 250 |Miner avansat in cloud| 0 0 15
+Passive BotnetRent 2 1 120 |Inchiriaza putere de calcul| 0 0 5
+Passive DataBroker 4 2 300 |Colecteaza si vinde date anonime| 0 0 22
+Passive OverclockMod 0 0 180 |Imbunatateste procesorul sistemului| 4 0 0
+Passive UpgradedBus 0 0 200 |Adauga placute de memorie RAM virtuala| 0 8 0
+Passive SuperCluster 5 5 600 |Un intreg cluster cu de toate| 10 16 50
+
+Server nasa.gov 142.250.190.46 8 5000
+Server bankofamerica.com 151.101.1.22 9 8500
+Server local_hospital.net 192.168.4.50 3 450
+Server silkroad_archive.onion 10.20.30.40 6 2500
+Server underground_forum.ru 93.184.216.34 4 900
+Server smart_grid.io 172.16.254.1 7 3200

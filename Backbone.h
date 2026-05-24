@@ -15,6 +15,8 @@ using namespace std;
 class Engine
 {
 private:
+    Engine();
+    ~Engine() = default;
     int Money;
     int Experience;
     int RAM;
@@ -30,7 +32,10 @@ private:
     vector<shared_ptr<Software>> installedSoftware;
     vector<shared_ptr<Software>> activeSoftware;
 public:
-    Engine() : Money(1000), Experience(0), RAM(10), ProcessingPower(5), Income(0), terminalLine(23), isRunning(true), currentTime(0) {}
+    static Engine& getInstance() {
+        static Engine instance;
+        return instance;
+    }
     void start();
     void render();
     void gotoxy(int x, int y);
@@ -63,6 +68,14 @@ public:
     void executeHack(const string& softwareName, const string& serverIP);
     void serverscan();
     string generateProgressBar(int remaining, int total, int length);
+    template <typename T>
+    std::shared_ptr<T> findInCatalog(const std::map<std::string, std::shared_ptr<T>>& catalog, const std::string& name) {
+        auto it = catalog.find(name);
+        if (it != catalog.end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
 };
 
 #endif // BACKBONE_H
